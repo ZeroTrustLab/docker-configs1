@@ -1,0 +1,34 @@
+# Use an official OpenJDK runtime as a parent image
+FROM openjdk:17-jdk-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the pom.xml and source code to the container
+COPY pom.xml /app
+COPY src /app/src
+
+# Copy the sapdbc.jar file to the container
+COPY libs/sapdbc.jar /app/libs/sapdbc.jar
+
+# Install Maven
+RUN apt-get update && apt-get install -y maven
+
+# Install the sapdbc.jar file into the local Maven repository
+RUN mvn install:install-file -Dfile=/app/libs/sapdbc.jar -DgroupId=com.sap -DartifactId=sapdbc -Dversion=7.9.10 -Dpackaging=jar
+
+# Build the application
+RUN mvn clean package
+
+# Expose the port the application runs on
+EXPOSE 9090
+
+# Use ARG to specify the JAR file
+ARG JAR_FILE=target/mock-api-1.0.0.jar
+
+# Copy the JAR file to the container and rename it to app.jar
+COPY ${JAR_FILE} /app/app.jar
+
+# Run the application
+CMD ["java", "-jar", "/app/app.jar"]
+
